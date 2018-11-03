@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://p.trellocdn.com/power-up.min.css">
+    <link rel="stylesheet" href="/stylesheets/settings.css" />
+  </head>
+  <body>
+    <form id="settings_form">
+      <label for="desired_cycle_time">Desired Cycle Time (in hours)</label>
+      <input type="text" name="desired_cycle_time" id="desired_cycle_time" />
+
+      <div>Lists that contribute to cycle time</div>
+      <div class="js-ct-lists-container"></div>
+
+      <br />
+      <div>Backlog / Up next list</div>
+      <div class="js-backlog-list-container"></div>
+
+      <br />
+      <input type="submit" value="OK" />
+    </form>
+    <script type="text/javascript" src="/javascripts/vendor/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="https://p.trellocdn.com/power-up.min.js"></script>
+    <script type="text/javascript" src="/javascripts/settings.js"></script>
+  </body>
+</html>
