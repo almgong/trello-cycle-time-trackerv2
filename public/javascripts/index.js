@@ -15,8 +15,9 @@ window.Trello.authorize({
   type: 'popup',
   name: 'Trello Cycle Time Tracker',
   scope: {
-    read: 'true',
-    write: 'false'
+    read: true,
+    write: false,
+    account: false
   },
   expiration: 'never',
   success: function() {
@@ -44,7 +45,7 @@ function computeTimeElapsedInHrs(startAsDate) {
 function presentTimeElapsed(timeElapsedHrs) {
   var days = Math.floor(timeElapsedHrs / 24);
   var remainderHours = timeElapsedHrs % 24;
-  var humanizedRemainderHours = remainderHours === 0 ? 'less than 1hr' : remainderHours + 'hrs';
+  var humanizedRemainderHours = remainderHours === 0 ? 'less than 1hr' : remainderHours + 'hr';
 
   return (days ? days + 'd ' : '') + humanizedRemainderHours;
 }
@@ -60,13 +61,13 @@ function getColorForTimeElapsedRatio(timeElapsedRatio) {
 }
 
 // this method returns a date object that denotes the most recent
-// movement of a card from a list NOT included in targetListIds to a list included
-// there
+// movement of a card from a list NOT including the name suffix to a list that
+// does include it
 //
 // if inverse argument is true, then we invert the functionality of this method
-// to find the most recent movement of a card from a list inlcluded in targetListIds
-// to a list NOT included in the list
-function parseMostRecentMoveToOneOfListsFromActions(actions, targetListIds, inverse) {
+// to find the most recent movement of a card from a list with the suffix
+// to a list NOT without it
+function parseMostRecentMoveToOneOfListsFromActions(actions, listSuffix, inverse) {
   var inverseCheck = inverse || false;
   var now = new Date();
 
@@ -79,8 +80,10 @@ function parseMostRecentMoveToOneOfListsFromActions(actions, targetListIds, inve
     if (actions[i].data
         && actions[i].data.listBefore
         && actions[i].data.listAfter
-        && inverseCheck ? targetListIds.indexOf(actions[i].data.listBefore.id) !== -1 : targetListIds.indexOf(actions[i].data.listBefore.id) === -1
-        && inverseCheck ? targetListIds.indexOf(actions[i].data.listAfter.id) === -1 : targetListIds.indexOf(actions[i].data.listAfter.id) !== -1
+        && actions[i].data.listBefore.name
+        && actions[i].data.listAfter.name
+        && inverseCheck ? actions[i].data.listBefore.name.endsWith(listSuffix) : !actions[i].data.listBefore.name.endsWith(listSuffix)
+        && inverseCheck ? !actions[i].data.listAfter.name.endsWith(listSuffix) : actions[i].data.listAfter.name.endsWith(listSuffix)
     ) {
       mostRecentDate = new Date(actions[i].date);
       break;
@@ -90,41 +93,27 @@ function parseMostRecentMoveToOneOfListsFromActions(actions, targetListIds, inve
   return mostRecentDate;
 }
 
-function renderBadge() {
-  return t.get('board', 'shared', SETTINGS_STORAGE_KEY).then(function(storedSettings) {
-    if (!storedSettings) {
-      return PROMPT_FOR_SETTINGS_BADGE;
-    }
+function isCycleTimeList(settings, listName) {
+  return listName.endsWith(settings.desiredCtListSuffix);
+}
 
-    var settings = JSON.parse(storedSettings);
+function isCompletionList(settings, listId) {
+  return listId === settings.desiredCompletionList;
+}
 
-    return t.list('id').get('id').then(function(listId) {
-      if (settings.selectedCycleTimeLists.indexOf(listId)) { // render badge with time
-        return t.get('card', 'shared', INITIAL_CARD_START_TIME_STORAGE_KEY, null).then(function(cardStartTime) {
-          if (cardStartTime) {
-            var startAsDate = new Date(data);
-            var hrsElapsed = Math.floor((new Date() - startAsDate) / 3600000);
-            return buildBadge(hrsElapsed, +settings.desiredCycleTime);
-          } else { // otherwise, we need to compute and store the last time this card was moved to the current list
-
-          }
-        });
-      } else { // render a "null" or no badge
-        return NULL_BADGE;
-      }
-    });
-  });
+function isBacklogList(settings, listId, listName) {
+  return !isCycleTimeList(settings, listName) && !isCompletionList(settings, listId);
 }
 
 window.TrelloPowerUp.initialize({
-  'show-settings': function (t, options) {
+  'show-settings': function (t, _options) {
     return t.popup({
       title: 'Cycle Time Tracker Settings',
       url: '/settings',
       height: 200
     });
   },
-  'card-badges': function (t, options) {
+  'card-badges': function (t, _options) {
     return [
       {
         dynamic: function () {
@@ -135,19 +124,22 @@ window.TrelloPowerUp.initialize({
 
             var settings = JSON.parse(storedSettings);
 
-            return t.list('id').get('id').then(function(listId) {
+            return t.list('id', 'name').then(function(list) {
               return t.card('id').get('id').then(function(cardId) {
                 // if in backlog list, render a NULL badge
                 // else if in cycle time list render active badge
                 // else render completed badge
-                if (listId === settings.backlogList) {
-                  console.log('nulling')
+                // if (listId === settings.backlogList) {
+                if (isBacklogList(settings, list.id, list.name)) {
+                  console.log('backlog list, nulling...');
+
                   return t.remove('card', 'shared', INITIAL_CARD_START_TIME_STORAGE_KEY).then(function() {
                     return t.remove('card', 'shared', CARD_COMPLETED_TIME_IN_HRS_STORAGE_KEY).then(function() {
                       return NULL_BADGE;
                     });
                   });
-                } else if (settings.selectedCycleTimeLists.indexOf(listId) !== -1) { // render badge with time
+                // } else if (settings.selectedCycleTimeLists.indexOf(listId) !== -1) { // in cycle time list, render badge with time
+              } else if (isCycleTimeList(settings, list.name)) { // render badge with time
                   return t.remove('card', 'shared', CARD_COMPLETED_TIME_IN_HRS_STORAGE_KEY).then(function() {
                     return t.get('card', 'shared', INITIAL_CARD_START_TIME_STORAGE_KEY, null).then(function(storedStartTime) {
                       if (storedStartTime) {
@@ -155,7 +147,7 @@ window.TrelloPowerUp.initialize({
                       }
 
                       return window.Trello.get('/card/' + cardId + '/actions?filter=updateCard').then(function(actions) {
-                        var startTime = parseMostRecentMoveToOneOfListsFromActions(actions, settings.selectedCycleTimeLists);
+                        var startTime = parseMostRecentMoveToOneOfListsFromActions(actions, settings.desiredCtListSuffix);
                         return t.set('card', 'shared', INITIAL_CARD_START_TIME_STORAGE_KEY, startTime).then(function() {
                           return computeTimeElapsedInHrs(startTime);
                         });
