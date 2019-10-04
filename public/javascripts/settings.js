@@ -3,24 +3,14 @@ var SETTINGS_STORAGE_KEY = 'settings';
 var t = TrelloPowerUp.iframe();
 var SETTINGS_FORM_SELECTOR = '#settings_form';
 var DESIRED_CYCLE_TIME_INPUT_SELECTOR = '#desired_cycle_time';
-var CYCLE_TIME_LISTS_CONTAINER_SELECTOR = '.js-ct-lists-container';
-var BACKLOG_LIST_CONTAINER_SELECTOR = '.js-backlog-list-container';
+var DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR = '#desired_ct_list_suffix';
+var DESIRED_COMPLETION_LIST_INPUT_SELECTOR = '#completion_list';
 
 function retrieveSettingsFormValues($settingsForm) {
-  var selectedListIds = $settingsForm
-  .find('.js-list-checkbox')
-  .filter(function(index) {
-    return $(this).prop('checked');
-  }).map(function() {
-    return this.id;
-  }).get();
-
-  var selectedBacklogListId = $settingsForm.find('.js-list-radio:checked').val();
-
   return {
-    backlogList: selectedBacklogListId,
-    desiredCycleTime: $settingsForm.find('#desired_cycle_time').val() || 1,
-    selectedCycleTimeLists: selectedListIds // ids here are the actual trello list ids (see #renderUi)
+    desiredCycleTime: $settingsForm.find(DESIRED_CYCLE_TIME_INPUT_SELECTOR).val() || 1,
+    desiredCtListSuffix: $settingsForm.find(DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR).val() || '*',
+    desiredCompletionList: $settingsForm.find(DESIRED_COMPLETION_LIST_INPUT_SELECTOR).val()
   };
 }
 
@@ -40,53 +30,25 @@ function storeSettings(settings) {
 
 function renderUi(settings) {
   $(DESIRED_CYCLE_TIME_INPUT_SELECTOR).val(settings.desiredCycleTime);
+  $(DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR).val(settings.desiredCtListSuffix || '*');
+
+  var completionListId = settings.desiredCompletionList;
 
   return getTrelloLists().then(function(lists) {
+    var optionsForCompletionList = [];
+
     lists.forEach(function(list) {
-      // generate cycle time lists checkboxes
-      var listCheckbox = document.createElement('input');
-      listCheckbox.setAttribute('type', 'checkbox');
-      listCheckbox.setAttribute('id', list.id);
-      listCheckbox.classList = 'js-list-checkbox';
+      completionListId = completionListId || list.id;
 
-      if (settings.selectedCycleTimeLists && settings.selectedCycleTimeLists.indexOf(list.id) !== -1) {
-        listCheckbox.setAttribute('checked', true);
-      }
-      
-      var listCheckboxLabel = document.createElement('label');
-      listCheckboxLabel.setAttribute('for', listCheckbox.getAttribute('id'));
-      listCheckboxLabel.innerText = list.name;
-      listCheckboxLabel.classList = 'list-input__label';
-
-      var wrapper = document.createElement('div');
-      wrapper.appendChild(listCheckbox);
-      wrapper.appendChild(listCheckboxLabel);
-
-      $(CYCLE_TIME_LISTS_CONTAINER_SELECTOR).append(wrapper);
-
-      // generate backlog list radio buttons content
-      var radio = document.createElement('input');
-      radio.setAttribute('type', 'radio');
-      radio.setAttribute('name', 'backloglist');
-      radio.setAttribute('id', list.id);
-      radio.setAttribute('value', list.id);
-      radio.classList = 'js-list-radio';
-
-      if (settings.backlogList && settings.backlogList === list.id) {
-        radio.setAttribute('checked', true);
-      }
-
-      var radioLabel = document.createElement('label');
-      radioLabel.setAttribute('for', radio.getAttribute('id'));
-      radioLabel.innerText = list.name;
-      radioLabel.classList = 'list-input__label';
-
-      var radioWrapper = document.createElement('div');
-      radioWrapper.appendChild(radio);
-      radioWrapper.appendChild(radioLabel);
-
-      $(BACKLOG_LIST_CONTAINER_SELECTOR).append(radioWrapper);
+      // generate option element for completion list
+      var option = document.createElement('option');
+      option.setAttribute('value', list.id);
+      option.innerText = list.name;
+      optionsForCompletionList.push(option);
     });
+
+    $(DESIRED_COMPLETION_LIST_INPUT_SELECTOR).append(optionsForCompletionList);
+    $(DESIRED_COMPLETION_LIST_INPUT_SELECTOR).val(completionListId);
   });
 }
 
@@ -100,8 +62,7 @@ $(function() {
 
     var settings = retrieveSettingsFormValues($(this));
     storeSettings(settings).then(function () {
-      console.log('saved settings!');
+      console.log('saved settings!', settings);
     });
   });
 });
-

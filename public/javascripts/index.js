@@ -62,7 +62,7 @@ function getColorForTimeElapsedRatio(timeElapsedRatio) {
 // this method returns a date object that denotes the most recent
 // movement of a card from a list NOT included in targetListIds to a list included
 // there
-// 
+//
 // if inverse argument is true, then we invert the functionality of this method
 // to find the most recent movement of a card from a list inlcluded in targetListIds
 // to a list NOT included in the list
@@ -87,7 +87,7 @@ function parseMostRecentMoveToOneOfListsFromActions(actions, targetListIds, inve
     }
   }
 
-  return mostRecentDate; 
+  return mostRecentDate;
 }
 
 function renderBadge() {
@@ -112,7 +112,7 @@ function renderBadge() {
       } else { // render a "null" or no badge
         return NULL_BADGE;
       }
-    });    
+    });
   });
 }
 

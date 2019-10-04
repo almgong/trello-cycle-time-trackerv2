@@ -9,12 +9,13 @@
       <label for="desired_cycle_time">Desired Cycle Time (in hours)</label>
       <input type="text" name="desired_cycle_time" id="desired_cycle_time" />
 
-      <div>Lists that contribute to cycle time</div>
-      <div class="js-ct-lists-container"></div>
+      <label for="desired_ct_list_suffix">Desired Cycle Time List Suffix</label>
+      <input type="text" name="desired_ct_list_suffix" id="desired_ct_list_suffix" />
 
-      <br />
-      <div>Backlog / Up next list</div>
-      <div class="js-backlog-list-container"></div>
+      <label for="completion_list">Desired Completion List</label>
+      <p>When a card is moved to this list for the first time, the card is marked as completed.</p>
+      <select id="completion_list">
+      </select>
 
       <br />
       <input type="submit" value="OK" />
