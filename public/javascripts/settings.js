@@ -4,12 +4,17 @@ var t = TrelloPowerUp.iframe();
 var SETTINGS_FORM_SELECTOR = '#settings_form';
 var DESIRED_CYCLE_TIME_INPUT_SELECTOR = '#desired_cycle_time';
 var DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR = '#desired_ct_list_suffix';
+var DESIRED_REACTION_TIME_LIST_SUFFIX_SELECTOR = '#desired_rt_list_suffix';
 var DESIRED_COMPLETION_LIST_INPUT_SELECTOR = '#completion_list';
+
+var DEFAULT_CT_SUFFIX = '*';
+var DEFAULT_RT_SUFFIX = '**';
 
 function retrieveSettingsFormValues($settingsForm) {
   return {
     desiredCycleTime: $settingsForm.find(DESIRED_CYCLE_TIME_INPUT_SELECTOR).val() || 1,
-    desiredCtListSuffix: $settingsForm.find(DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR).val() || '*',
+    desiredCtListSuffix: $settingsForm.find(DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR).val() || DEFAULT_CT_SUFFIX,
+    desiredRtListSuffix: $settingsForm.find(DESIRED_REACTION_TIME_LIST_SUFFIX_SELECTOR).val() || DEFAULT_RT_SUFFIX,
     desiredCompletionList: $settingsForm.find(DESIRED_COMPLETION_LIST_INPUT_SELECTOR).val()
   };
 }
@@ -30,7 +35,8 @@ function storeSettings(settings) {
 
 function renderUi(settings) {
   $(DESIRED_CYCLE_TIME_INPUT_SELECTOR).val(settings.desiredCycleTime);
-  $(DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR).val(settings.desiredCtListSuffix || '*');
+  $(DESIRED_CYCLE_TIME_LIST_SUFFIX_SELECTOR).val(settings.desiredCtListSuffix || DEFAULT_CT_SUFFIX);
+  $(DESIRED_REACTION_TIME_LIST_SUFFIX_SELECTOR).val(settings.desiredRtListSuffix || DEFAULT_RT_SUFFIX);
 
   var completionListId = settings.desiredCompletionList;
 
